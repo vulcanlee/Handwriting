@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Handwriting.Client/Handwriting.Client.csproj" />
+    <Project Path="src/Handwriting.Core/Handwriting.Core.csproj" />
+    <Project Path="src/Handwriting.Server/Handwriting.Server.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Handwriting.Core.Tests/Handwriting.Core.Tests.csproj" />
+  </Folder>
+</Solution>
