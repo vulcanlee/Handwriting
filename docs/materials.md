@@ -23,3 +23,9 @@
 在根目錄下載上述壓縮檔至 `.cache/materials/bopomofo.zip`，用 `python -m zipfile -e .cache/materials/bopomofo.zip .cache/materials/extracted` 解壓，執行 `python scripts/build-curriculum.py`。音訊重建先安裝 `edge-tts==7.2.8`，再執行 `python scripts/build-audio.py`（需要連網；現有成功音檔會略過）。執行 `python scripts/Test-Curriculum.py` 驗證完整性。
 
 原始參考：[兒童注音練習本整理](https://blog.gtwang.org/children/phonetic-exercise-books-for-children/)。只參考大格子與描線引導概念，沒有複製文章圖片。
+
+## 動物探險素材
+
+五組動物與 88 枚徽章是本專案原創 SVG，由 `scripts/build-adventure-assets.py` 產生。顏色、外框、配件、模式圖記與門檻數字區分成就。條件語音 88 份加獲獎鼓勵 1 份，沿用 edge-tts 7.2.8、zh-TW-HsiaoChenNeural、速度 -15%，僅製作時連網。
+
+先執行 `dotnet run --project tools/Handwriting.Assets -- .` 匯出核心徽章定義，再執行 `python scripts/build-adventure-assets.py --audio`。成功音檔略過；條件文字變動時須移除對應舊音檔後重新製作。省略 `--audio` 只更新圖案與 PRD 表格。真人聽辨與平板試玩狀態見 0.1.2 驗證文件。

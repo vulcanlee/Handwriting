@@ -3,9 +3,11 @@
 async page => {
     const origin = await page.evaluate(() => location.origin);
     const symbols = await (await page.request.get(origin + '/data/symbols.json')).json();
+    if (await page.getByLabel('暱稱', { exact: true }).count()) { await page.getByLabel('暱稱', { exact: true }).fill('驗收探險家'); await page.getByRole('button', { name: '保存探險家' }).click(); }
     await page.getByRole('heading', { name: '今天，想寫哪一個？' }).waitFor();
-    const before = await page.evaluate(() => JSON.parse(localStorage.getItem('little-hands-state-v1') || '{}'));
+    const before = await page.evaluate(() => (() => { const s = JSON.parse(localStorage.getItem('little-hands-state-v2')); return s.children.find(c => c.id === s.activeChildId); })());
     const trace = async points => {
+        await page.waitForFunction(() => { const c = document.querySelector('#practice-canvas'); return c && !c.closest('.locked'); });
         const canvas = page.locator('#practice-canvas');
         await canvas.scrollIntoViewIfNeeded();
         const bounds = await canvas.boundingBox();
@@ -15,13 +17,13 @@ async page => {
         for (const p of points.slice(1)) await page.mouse.move(...xy(p));
         await page.mouse.up();
     };
-    await page.getByRole('tab', { name: '123 數字', exact: true }).click();
+    await page.getByRole('tab', { name: '小兔 數字', exact: true }).click();
     await page.getByRole('button', { name: '練習 0', exact: true }).click();
     await page.getByRole('button', { name: '▶ 開始練習' }).click();
     await trace(symbols.find(s => s.id === 'numbers-0').strokes[0].points);
     await page.getByRole('heading', { name: '太棒了，寫完了！' }).waitFor();
 
-    await page.getByRole('tab', { name: 'ABC 大寫', exact: true }).click();
+    await page.getByRole('tab', { name: '小獅子 大寫英文', exact: true }).click();
     await page.getByRole('button', { name: '練習 A', exact: true }).click();
     await page.getByRole('button', { name: '▶ 開始練習' }).click();
     const a = symbols.find(s => s.id === 'upper-A');
@@ -34,7 +36,7 @@ async page => {
     await page.getByRole('heading', { name: '太棒了，寫完了！' }).waitFor();
     await page.reload();
     await page.getByRole('heading', { name: '今天，想寫哪一個？' }).waitFor();
-    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('little-hands-state-v1')));
+    const saved = await page.evaluate(() => (() => { const s = JSON.parse(localStorage.getItem('little-hands-state-v2')); return s.children.find(c => c.id === s.activeChildId); })());
     for (const id of ['numbers-0', 'upper-A']) {
         if (saved.progress[id].successfulAttempts !== (before.progress?.[id]?.successfulAttempts || 0) + 1)
             throw Error('整字計數或重載保存失敗：' + id);

@@ -26,4 +26,8 @@ SymbolDefinition 含分類、排序、字形、逐筆定義與語音；StrokeDef
 
 ## 交付規範
 
-根目錄 AGENTS.md 與 CLAUDE.md 自 Downloads 原樣複製，SHA-256 一致。版本基準 0.1.0，本次交付 0.1.1；不自動 commit。文件採 UTF-8 BOM、CRLF，版本更新同步兩處索引。
+根目錄 AGENTS.md 與 CLAUDE.md 自 Downloads 原樣複製，SHA-256 一致。版本基準 0.1.0，初版交付 0.1.1，動物探險交付 0.1.2；不自動 commit。文件採 UTF-8 BOM、CRLF，版本更新同步兩處索引。
+
+## 0.1.2 動物探險擴充
+
+現行首頁提供自由練習、探險闖關與我的徽章。每位孩子有獨立本機紀錄，原練習畫面已整理為共用 PracticeBoard，核心筆畫判定維持原規則。新增需求以 [動物探險 PRD](product/動物探險激勵系統PRD.md) 為準；多孩子資料、徽章與計時狀態詳見 [技術設計](architecture/動物探險激勵系統技術設計.md)。
