@@ -4,7 +4,7 @@ async page => {
         const names = (await caches.keys()).filter(name => name.startsWith('handwriting-'));
         for (const name of names) if (await (await caches.open(name)).match(new URL('__ready', location.href))) return !!navigator.serviceWorker.controller;
         return false;
-    }, { timeout: 60000 });
+    }, null, { timeout: 60000 });
     await page.context().setOffline(true);
     try {
         await page.reload();
@@ -13,6 +13,9 @@ async page => {
             const symbols = await (await fetch('data/symbols.json')).json();
             const files = new Set(symbols.flatMap(s => [s.audio, ...s.strokes.map(st => st.audio)]));
             for (const name of ['start', 'direction', 'short', 'shape', 'success', 'next', 'empty']) files.add('audio/' + name + '.mp3');
+            const badges = await (await fetch('data/badges.json')).json();
+            for (const badge of badges) { files.add(badge.audio); if (!(await fetch(badge.image)).ok) throw Error('離線徽章遺失：' + badge.id); }
+            files.add('audio/badges/earned.mp3');
             const decoder = new AudioContext();
             for (const file of files) {
                 const response = await fetch(file);
@@ -23,7 +26,7 @@ async page => {
             await decoder.close();
             return files.size;
         });
-        await page.getByRole('tab', { name: 'ㄅㄆㄇ 注音', exact: true }).click();
+        await page.getByRole('tab', { name: '小貓頭鷹 注音', exact: true }).click();
         await page.getByRole('button', { name: '練習 ㄅ', exact: true }).click();
         await page.getByRole('button', { name: '▶ 開始練習' }).click();
         await page.locator('#practice-canvas').waitFor();

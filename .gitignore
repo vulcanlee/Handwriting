@@ -432,3 +432,5 @@ FodyWeavers.xsd
 artifacts/
 
 .playwright-cli/
+
+output/playwright/

@@ -1,0 +1,49 @@
+@inject IJSRuntime JS
+<section class="welcome"><div><p class="eyebrow">每一枚，都是小手努力的故事</p><h1>@Child.Name 的徽章牆</h1><p>已收集 @Child.Awards.Count / @Badges.Count 枚 · 點選灰色徽章，聽聽下一個目標。</p></div></section>
+<label class="badge-filter">尋找探險夥伴<select aria-label="篩選徽章題型" @bind="_category"><option value="">全部夥伴</option>@foreach (var c in BadgeCatalog.Categories) { <option value="@c.Key">@c.Animal · @c.Label</option> }</select></label>
+<label class="badge-filter">成就分類<select aria-label="篩選成就分類" @bind="_group"><option value="">全部成就</option>@foreach (var g in Badges.Select(b => b.Group).Distinct()) { <option value="@g">@g</option> }</select></label>
+@foreach (var group in Badges.Where(b => (_category == "" || b.Category == _category) && (_group == "" || b.Group == _group)).GroupBy(b => b.Group)) {
+    <section class="badge-section"><h2>@group.Key <small>@group.Count(b => Child.Awards.ContainsKey(b.Id)) / @group.Count()</small></h2><div class="badge-grid">
+    @foreach (var badge in group) {
+        var earned = Child.Awards.ContainsKey(badge.Id);
+        <button class="badge-tile @(earned ? "earned" : "unearned")" aria-label="@(badge.Name + (earned ? "，已取得" : "，尚未取得"))" @onclick="() => Open(badge)">
+            <img src="@badge.Image" alt="" loading="lazy" /><strong>@badge.Name</strong><span>@(earned ? "✓ 已取得" : "尚未取得")</span>
+            <small>@ProgressText(badge)</small>
+        </button>
+    }
+    </div></section>
+}
+@if (_detail is not null) {
+    <dialog id="badge-detail" class="badge-dialog" aria-labelledby="badge-title" @onclose="Close" @oncancel="Close">
+        <img class="@(Child.Awards.ContainsKey(_detail.Id) ? "" : "unearned-image")" src="@_detail.Image" alt="" />
+        <h2 id="badge-title">@_detail.Name</h2><p>@_detail.Condition</p><p>@ProgressText(_detail)</p>
+        @if (Child.Awards.TryGetValue(_detail.Id, out var award)) { <p>@(award.Imported ? "依原有練習紀錄補發，原取得日期不詳。" : $"取得日期：{award.EarnedAt?.ToLocalTime():yyyy/MM/dd}")</p> }
+        <div class="completion-actions"><button class="secondary-button" @onclick="() => OnPlay.InvokeAsync(_detail)">🔊 再聽一次</button><button class="primary-button" @onclick="Close">知道了</button></div>
+    </dialog>
+}
+@code {
+    [Parameter, EditorRequired] public ChildProfile Child { get; set; } = null!;
+    [Parameter, EditorRequired] public List<BadgeDefinition> Badges { get; set; } = [];
+    [Parameter] public EventCallback<BadgeDefinition> OnPlay { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    private string _category = "";
+    private string _group = "";
+    private BadgeDefinition? _detail;
+    private bool _open;
+    private string ProgressText(BadgeDefinition b) => b.Kind switch
+    {
+        "wins" => $"成功 {b.Current(Child)} 次 · 目標 {b.Target} 次",
+        "length" => b.Current(Child) > 0 ? $"已完成 {b.Target} 題探險" : $"目標：一場 {b.Target} 題",
+        _ => $"進度 {Math.Min(b.Current(Child), b.Target)} / {b.Target}"
+    };
+    private async Task Open(BadgeDefinition badge) { _detail = badge; _open = true; if (!Child.Awards.ContainsKey(badge.Id)) await OnPlay.InvokeAsync(badge); }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_open) return;
+        _open = false;
+        var module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/adventure.js");
+        await module.InvokeVoidAsync("showDialog", "badge-detail");
+        await module.DisposeAsync();
+    }
+    private async Task Close() { _detail = null; await OnClose.InvokeAsync(); }
+}

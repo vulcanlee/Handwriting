@@ -18,5 +18,8 @@
     <Content Include="..\..\src\Handwriting.Client\wwwroot\data\symbols.json" Link="TestData\symbols.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\src\Handwriting.Client\wwwroot\data\badges.json" Link="TestData\badges.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>

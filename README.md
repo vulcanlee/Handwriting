@@ -1,6 +1,6 @@
 ﻿# 小手寫寫
 
-給 4–6 歲小朋友的繁體中文手寫練習網站。以 .NET 10、ASP.NET Core 與 Blazor WebAssembly PWA 開發，提供數字、英文大小寫、注音共 99 個符號、174 筆軌跡。版本：0.1.1。
+給 4–6 歲小朋友的繁體中文手寫練習網站。以 .NET 10、ASP.NET Core 與 Blazor WebAssembly PWA 開發，提供數字、英文大小寫、注音共 99 個符號、174 筆軌跡。版本：0.1.2。
 
 ## 啟動
 
@@ -47,3 +47,11 @@ pwsh -File scripts/Test-DocsEncoding.ps1
 - `tests`：核心回歸測試及離線快取測試。
 
 第一版無帳號、雲端同步、聲調、單字、自然發音課程、關卡鎖定或每日排課。不自動 commit，未部署到外部服務。
+
+## 動物探險激勵系統
+
+支援同一瀏覽器建立多位孩子的獨立背包、88 枚分類徽章及不限時／限時闖關。點灰色徽章可看進度並聽取得條件；通關累積次數與里程碑，完整寫完的符號都計入學習成果。
+
+開始使用請看 [動物探險使用指南](docs/guides/動物探險使用指南.md)；完整需求與徽章條件見 [PRD](docs/product/動物探險激勵系統PRD.md)，資料與計時設計見 [技術設計](docs/architecture/動物探險激勵系統技術設計.md)。成果只存在本機；同時僅一個分頁可練習，需要支援 Web Locks 的安全來源瀏覽器。
+
+新增測試：`node --test tests/adventure-storage.test.cjs tests/adventure-cue.test.cjs tests/adventure-assets.test.cjs`。交付驗證見 [0.1.2 驗收結果](docs/adventure-verification.md)。
