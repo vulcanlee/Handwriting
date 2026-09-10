@@ -18,7 +18,7 @@ public partial class Home
     private readonly CancellationTokenSource _stop = new();
     private Task? _ticker;
     private bool _loaded, _writer, _disposed, _editing, _newChild, _timed, _boardBusy = true, _freePaused;
-    private string _page = "practice", _category = "numbers", _name = "", _avatar = "numbers", _offlineText = "檢查離線教材中";
+    private string _page = "practice", _category = "numbers", _name = "", _avatar = "numbers", _offlineText = "檢查離線教材中", _writerMode = "none";
     private string? _notice, _profileError;
     private int _count = 5, _sequence;
     private readonly HashSet<string> _selectedCategories = ["numbers"];
@@ -30,6 +30,10 @@ public partial class Home
     private string BoardKey => $"{Child?.Id}-{_sequence}";
     private string ClockText => TimeSpan.FromSeconds(Math.Ceiling(_run?.Remaining(Now) ?? 0)).ToString(@"mm\:ss");
     private string ResultTitle => _run?.Status switch { "passed" => "探險成功！", "timeout" => "時間到了，辛苦小手了！", _ => "這次先休息，隨時再出發！" };
+    private string WriterBlockedTitle => _writerMode == "busy" ? "先讓另一個小手完成練習" : "這個瀏覽器目前無法保存成果";
+    private string WriterBlockedText => _writerMode == "busy"
+        ? "關閉其他練習分頁後，重新載入即可接續。"
+        : "請允許這個網站使用本機儲存空間，再重新載入。";
 
     protected override async Task OnInitializedAsync()
     {
@@ -43,6 +47,7 @@ public partial class Home
         _practice = await JS.InvokeAsync<IJSObjectReference>("import", "./js/practice.js");
         _self = DotNetObjectReference.Create(this);
         _writer = await _store.InvokeAsync<bool>("acquireWriter");
+        _writerMode = await _store.InvokeAsync<string>("getWriterMode");
         LoadedAdventure loaded;
         try { loaded = await _store.InvokeAsync<LoadedAdventure>("loadAdventure"); }
         catch (Exception error) when (error is JSException or JsonException)
@@ -51,7 +56,8 @@ public partial class Home
         }
         _state = loaded.State;
         if (loaded.Malformed) { _writer = false; _notice = "保存資料格式異常，已保留原始資料，請由家長協助檢查，避免覆蓋成果。"; }
-        else if (!_writer) _notice = "另一個分頁正在使用，請關閉其他分頁後重新載入。本功能需要支援 Web Locks 的 HTTPS 或 localhost 瀏覽器。";
+        else if (!_writer && _writerMode == "busy") _notice = "另一個分頁正在使用，請關閉其他練習分頁後重新載入。";
+        else if (!_writer) _notice = "瀏覽器無法取得本機寫入權限，請允許網站資料後重新載入。";
         else if (!loaded.Available) _notice = "瀏覽器無法保存資料，這次成果會暫存在記憶體，關閉後可能遺失。";
         if (Child is null && _state.Children.Count > 0) _state.ActiveChildId = _state.Children[0].Id;
         _editing = _newChild = _state.Children.Count == 0;
@@ -74,7 +80,15 @@ public partial class Home
     private async Task Save()
     {
         if (_writer && _store is not null && !await _store.InvokeAsync<bool>("saveAdventure", _state))
-            _notice = "成果尚未保存：瀏覽器空間或儲存權限不足。這次仍可練習，請先不要關閉網站。";
+        {
+            _writerMode = await _store.InvokeAsync<string>("getWriterMode");
+            if (_writerMode == "busy")
+            {
+                _writer = false;
+                _notice = "另一個分頁已取得寫入權，這個分頁已停止保存。請只保留一個練習分頁並重新載入。";
+            }
+            else _notice = "成果尚未保存：瀏覽器空間或儲存權限不足。這次仍可練習，請先不要關閉網站。";
+        }
     }
     private void Award(bool imported = false)
     {

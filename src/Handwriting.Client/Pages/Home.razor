@@ -10,7 +10,7 @@
 @if (!_loaded) { <section class="loading-card"><p>正在準備探險背包…</p></section> }
 else {
     @if (_notice is not null) { <div class="notice" role="status">@_notice<button aria-label="關閉訊息" @onclick="() => _notice = null">×</button></div> }
-    @if (!_writer) { <section class="adventure-card"><h1>先讓另一個小手完成練習</h1><p>關閉其他練習分頁後，重新載入即可接續。</p></section> }
+    @if (!_writer) { <section class="adventure-card"><h1>@WriterBlockedTitle</h1><p>@WriterBlockedText</p></section> }
     else {
         <section class="profile-bar" aria-label="孩子的探險背包">
         @if (Child is not null) {
@@ -67,4 +67,4 @@ else {
     }
 }
 </main>
-<footer><span>陪孩子慢慢寫、開心學</span><a href="credits.html">素材與授權</a><span>v0.1.2</span><button @onclick="RetryOffline">檢查離線教材</button></footer>
+<footer><span>陪孩子慢慢寫、開心學</span><a href="credits.html">素材與授權</a><span>v0.1.3</span><button @onclick="RetryOffline">檢查離線教材</button></footer>

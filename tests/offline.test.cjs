@@ -36,6 +36,15 @@ test('retry re-registers after a failed first install leaves a stale registratio
  await window.handwritingOffline.retry();
  assert.equal(registrations,2);
 });
+test('insecure HTTP reports usable online mode instead of a generic HTTPS failure',async()=>{
+ const navigator={};
+ const window={isSecureContext:false};
+ vm.runInNewContext(fs.readFileSync('src/Handwriting.Client/wwwroot/js/offline.js','utf8'),{navigator,window,Set,console});
+ let status;
+ window.handwritingOffline.subscribe(value=>status=value);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(status,'HTTP 線上模式 · 離線功能需 HTTPS 或 localhost');
+});
 test('cached media supports byte ranges without requiring a network request',async()=>{
  const w=worker();
  const response=await w.context.rangeResponse(new Response(new Uint8Array([10,20,30,40,50]),{headers:{'content-type':'audio/wav','content-encoding':'gzip'}}),'bytes=1-3');

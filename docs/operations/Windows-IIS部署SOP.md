@@ -1,6 +1,6 @@
 ﻿# Windows IIS 部署 SOP：CLI 與 Visual Studio 2026
 
-本文件適用於小手寫寫 0.1.1，以 Windows Server 2022／2025、IIS 10、64 位元及獨立 HTTPS 網站為範例；Windows 11 適合區網驗收。兩種發布方式都必須發布 **Handwriting.Server 專案的完整產物**，再複製到 IIS，不能只部署 Client 的 wwwroot。
+本文件適用於小手寫寫 0.1.3，以 Windows Server 2022／2025、IIS 10、64 位元及獨立網站為範例；Windows 11 適合區網驗收。兩種發布方式都必須發布 **Handwriting.Server 專案的完整產物**，再複製到 IIS，不能只部署 Client 的 wwwroot。
 
 本文件已依專案程式與既有 Release 產物核對。以下 IIS 設定、Visual Studio 2026 圖形介面與 Android 實機步驟仍需在目標環境驗證，並非已完成的部署紀錄。本文不需要 Web Deploy，也不包含自動部署或零停機架構。
 
@@ -11,12 +11,12 @@
 | 開發電腦 | .NET 10 SDK；VS 路線另需 Visual Studio 2026 與「ASP.NET 與網頁程式開發」工作負載 |
 | IIS 伺服器 | IIS 10、.NET 10 Hosting Bundle、系統管理員權限；只執行網站不需 SDK |
 | 網站／集區名稱 | Handwriting；使用專用集區 |
-| 網址 | https://write.example.com/；請換成自己控制的名稱 |
-| 版本目錄 | C:\Sites\Handwriting\releases\0.1.1；每次交付使用新的目錄 |
+| 網址 | https://write.example.com/；只需線上使用時也可用 http://伺服器IP:連接埠/ |
+| 版本目錄 | C:\Sites\Handwriting\releases\0.1.3；每次交付使用新的目錄 |
 | 診斷目錄 | C:\Sites\Handwriting\logs；平常不開啟 stdout 記錄 |
-| 傳輸與存取 | 可將完整發布資料夾安全複製到伺服器；用戶端可連 TCP 443 |
+| 傳輸與存取 | 可將完整發布資料夾安全複製到伺服器；用戶端可連 HTTPS 443 或設定的 HTTP 連接埠 |
 
-正式主機需具備對應網域的有效 HTTPS 憑證及完整信任鏈；DNS 應指向 IIS 主機。本文用 Framework-dependent、Portable 發布，執行時依賴伺服器安裝的 .NET 10 與 ASP.NET Core Runtime。Hosting Bundle 同時提供 IIS 所需的 ASP.NET Core Module，僅安裝一般 Runtime 不足以完成 IIS 託管。
+需要 PWA 安裝或離線使用時，正式主機需具備對應網域的有效 HTTPS 憑證及完整信任鏈；DNS 應指向 IIS 主機。只需保持連線使用時可建立 HTTP Binding，程式會啟用 HTTP 線上模式。本文用 Framework-dependent、Portable 發布，執行時依賴伺服器安裝的 .NET 10 與 ASP.NET Core Runtime。Hosting Bundle 同時提供 IIS 所需的 ASP.NET Core Module，僅安裝一般 Runtime 不足以完成 IIS 託管。
 
 先安裝 IIS，再安裝最新版 .NET 10 Hosting Bundle。若先裝 Bundle 才啟用 IIS，重新執行 Bundle 的 Repair；依安裝提示重新啟動主機或 IIS 服務，安排維護時段，避免影響其他站台。套件請從 [Microsoft .NET 10 下載頁](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) 的 ASP.NET Core Runtime／Hosting Bundle 取得。安裝關係可參考 [Hosting Bundle 說明](https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/hosting-bundle?view=aspnetcore-10.0)。
 
@@ -30,7 +30,7 @@
 
 平板與電腦須可互通；訪客 Wi-Fi 的用戶端隔離可能阻擋連線。區網 DNS 要將正式測試主機名稱解析到電腦的區網 IP；修改電腦 hosts 檔不會改變平板的 DNS。建議使用自己網域與受信任憑證；使用內部 CA 時需在 Android 安裝並確認其信任鏈。憑證的 SAN 必須包含連線名稱，不可忽略憑證警告當作通過。
 
-在 Windows Defender 防火牆「具有進階安全性」新增輸入規則：TCP 443，限制必要的來源網段及適用網路設定檔。只在使用轉址站時開放 TCP 80；不要關閉整個防火牆。IIS Express、localhost 開發憑證及電腦本機的信任不會自動提供給 Android。
+在 Windows Defender 防火牆「具有進階安全性」新增輸入規則：HTTPS 使用 TCP 443；HTTP 線上模式開放網站 Binding 所用連接埠，例如 80 或 88。限制必要的來源網段及適用網路設定檔，不要關閉整個防火牆。IIS Express、localhost 開發憑證及電腦本機的信任不會自動提供給 Android。
 
 ## 2. 方法 A：CLI Publish
 
@@ -124,11 +124,11 @@ SDK 產生的 `web.config` 應以 `AspNetCoreModuleV2` 處理請求；本專案�
 2. 建立 `C:\Sites\Handwriting\releases\0.1.1`，把第 4 節確認過的輸出**全部內容**複製到其中，`web.config` 必須直接位於該目錄，不可多包一層 publish 資料夾。保留副檔名及隱藏檔，複製後再核對清單。
 3. IIS Manager → Application Pools → Add Application Pool，名稱 `Handwriting`，.NET CLR version 選 **No Managed Code**，Managed pipeline mode 選 **Integrated**。進 Advanced Settings，確認 **Enable 32-Bit Applications = False**、Identity = **ApplicationPoolIdentity**。No Managed Code 是 IIS 集區設定，不代表不需 .NET Runtime。
 4. 在版本目錄的內容 → 安全性 → 編輯 → 新增，選本機位置並輸入 `IIS AppPool\Handwriting`，授予「讀取及執行、列出資料夾內容、讀取」，讓子目錄繼承。不要給整站 Modify／Full Control。若父目錄有額外限制，確認該身分可穿越到版本目錄。
-5. IIS Manager → Sites → Add Website：Site name `Handwriting`，Application pool 選同名集區，Physical path 選上述版本目錄；Type 選 **https**、Port **443**、Host name `write.example.com`，選對應 SSL certificate。共用 IP 的多站台使用 SNI（Require Server Name Indication），避免與既有 Binding 衝突。
-6. 若憑證尚未匯入，在伺服器節點 → Server Certificates → Import 匯入含私鑰的 PFX，確認到期日、主機名稱與信任鏈後再設 Binding。妥善保存 PFX，不放進網站目錄或 Git。
+5. IIS Manager → Sites → Add Website：Site name `Handwriting`，Application pool 選同名集區，Physical path 選上述版本目錄。HTTP 線上模式選 **http** 與連接埠（例如 **88**），IP address 可選 All Unassigned；確認沒有與其他站台 Binding 衝突。需要離線時改選 **https**、Port **443**、Host name `write.example.com` 及對應 SSL certificate，共用 IP 的多站台使用 SNI（Require Server Name Indication）。
+6. HTTPS 才需憑證：若尚未匯入，在伺服器節點 → Server Certificates → Import 匯入含私鑰的 PFX，確認到期日、主機名稱與信任鏈後再設 Binding。HTTP 線上模式略過此步。妥善保存 PFX，不放進網站目錄或 Git。
 7. 網站 → Authentication，確認 Anonymous Authentication 啟用；Edit 選 **Application pool identity**，使靜態資源與第 4 步的 ACL 一致。本系統不需 Windows Authentication。
 8. 在系統管理員 PowerShell 依下方命令設定專用集區的 Production 環境，再重新啟動該集區。兩個環境變數使用同值，避免繼承設定不一致；不修改 wwwroot 內已發布內容。
-9. 啟動集區及網站，從另一台電腦以完整 HTTPS 網址開啟；確認憑證沒有警告，再依第 8 節驗收。
+9. 啟動集區及網站，從另一台電腦以完整網址開啟。HTTP 應顯示線上模式；HTTPS 應確認憑證沒有警告，再依第 8 節驗收。
 
 第 8 步的初次設定命令如下。先查看目前設定，若同名環境變數已存在，不要重複新增；使用下方更新命令修改值。集區層級環境變數參考 [IIS environmentVariables](https://learn.microsoft.com/en-us/iis/configuration/system.applicationhost/applicationpools/add/environmentvariables/)。
 
@@ -148,13 +148,13 @@ if ($LASTEXITCODE -ne 0) { throw '設定 ASPNETCORE_ENVIRONMENT 失敗。' }
 & $appcmdPath set config -section:system.applicationHost/applicationPools "/[name='Handwriting'].environmentVariables.[name='ASPNETCORE_ENVIRONMENT'].value:Production" /commit:apphost
 ```
 
-本系統在非 Development 環境啟用 HSTS，但程式目前沒有 HTTP→HTTPS 轉址中介軟體。基本 SOP 只建立 HTTPS Binding。若需要 HTTP 入口，另建 `Handwriting-Redirect` 網站，使用獨立空目錄及專用集區，只綁定該主機名稱的 HTTP 80；安裝 HTTP Redirection 角色功能後，在此轉址站的 HTTP Redirect 設定目標 `https://write.example.com/`、永久轉址 301，勾選轉至完整目的地。此簡單設定統一回首頁，不保留輸入的子路徑；請勿同時在正式 HTTPS 站啟用相同轉址以免循環。確認實際 HTTP 回應為 301 且 Location 正確。
+本系統在非 Development 環境啟用 HSTS，但程式沒有 HTTP→HTTPS 轉址中介軟體。需要 HTTP 線上模式時，可直接在 Handwriting 網站新增 HTTP Binding 並開放對應防火牆連接埠；不安裝憑證也能練習與保存，但頁首會提示不能離線。若日後改成 HTTPS，可另建 `Handwriting-Redirect` 網站，使用獨立空目錄及專用集區，只綁定 HTTP 80；安裝 HTTP Redirection 角色功能後，在此轉址站的 HTTP Redirect 設定目標 `https://write.example.com/`、永久轉址 301，勾選轉至完整目的地。此簡單設定統一回首頁，不保留輸入的子路徑；請勿同時在正式 HTTPS 站啟用相同轉址以免循環。確認實際 HTTP 回應為 301 且 Location 正確。
 
 ## 6. PWA、快取與資料注意事項
 
 網站預設部署在來源根路徑 `/`。不要直接放入 `/Handwriting/` 虛擬目錄；子路徑需要一起調整 base、manifest、Service Worker 範圍及主機路由，另案修改並測試。
 
-只有所有必要程式、教材與音檔下載成功，介面才顯示「已可離線使用」。Android 透過區網 IP 的 HTTP 連線不符合需求；略過憑證警告也不等於可可靠使用 PWA。下載失敗時保持連網，按頁尾「檢查離線教材」重試。PWA 安裝及快取生命週期的背景可參考 [Blazor PWA 指引](https://learn.microsoft.com/en-us/aspnet/core/blazor/progressive-web-app/?view=aspnetcore-10.0)。
+一般 HTTP 顯示「HTTP 線上模式」，可練習、闖關及保存於目前瀏覽器，但重新開啟時必須保持連線。只有 HTTPS／localhost 且所有必要程式、教材與音檔下載成功，介面才顯示「已可離線使用」。略過憑證警告也不等於可可靠使用 PWA。下載失敗時保持連網，按頁尾「檢查離線教材」重試。PWA 安裝及快取生命週期的背景可參考 [Blazor PWA 指引](https://learn.microsoft.com/en-us/aspnet/core/blazor/progressive-web-app/?view=aspnetcore-10.0)。
 
 發布時不可混用不同版本的檔案，也不可直接修改發布後的教材、音檔或 wwwroot 內容；Service Worker 依資源清單進行完整性校驗，任意修改可能導致下載失敗。需要變更內容時回到原始碼重新發布完整版本。
 
@@ -185,7 +185,8 @@ if ($LASTEXITCODE -ne 0) { throw '設定 ASPNETCORE_ENVIRONMENT 失敗。' }
 
 以正常連線的新瀏覽器與已保存進度的既有瀏覽器分別測試。首次上線與更新都要完成；回復時另核對目標舊版本。測試紀錄至少填入日期、部署版本、作業系統、瀏覽器／平板型號、結果與問題。
 
-- [ ] HTTPS 網域與憑證正確，另一台裝置可連線；如有 HTTP 入口，確認 301 轉址。
+- [ ] 另一台裝置可連線；HTTPS 網域與憑證正確，或 HTTP Binding、連接埠與防火牆規則正確。若另設轉址站才確認 301 轉址。
+- [ ] 採 HTTP 線上模式時，頁首顯示不能離線；第一個分頁可保存，第二個分頁被阻擋，關閉第一頁後可重新取得寫入權。
 - [ ] 畫面載入且無瀏覽器 Console 錯誤；四分類共 99 符號可選，版本符合交付。
 - [ ] 正確描寫可完成，錯誤筆畫可重試且保留成功筆畫；語音可播放、重播及靜音。
 - [ ] 完成一次後重新載入，完成標記與成功次數保持，重播不增加次數。
@@ -211,6 +212,7 @@ WASM 通常應為 `application/wasm`，JSON 為 `application/json`，JavaScript 
 | 始終看到舊版 | 用乾淨瀏覽器先確認伺服器版本，再查 Service Worker waiting；連網檢查教材並關閉所有分頁／PWA 視窗 |
 | 語音無聲 | 先按開始以取得使用者互動，確認未靜音、裝置音量、音檔請求及 Range 回應；離線時確認下載完成 |
 | Android 無法離線 | 確認受信任 HTTPS、安全來源、下載完成；localhost、開發憑證或桌面 hosts 設定不適用平板 |
+| HTTP 顯示另一分頁正在使用 | 關閉同網址、同連接埠的其他分頁後重新載入；異常關閉時等 6 秒再試，不要清除網站資料 |
 
 IIS 存取日誌的位置可在網站 Logging 功能查看，通常位於 `C:\inetpub\logs\LogFiles\W3SVC<網站ID>`；HTTP 狀態、子狀態與 Win32 狀態可協助定位。Event Viewer → Windows Logs → Application 查看 IIS AspNetCore Module V2／.NET 的同時段事件。模組啟動錯誤參考 [ASP.NET Core IIS 疑難排解](https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/troubleshoot?view=aspnetcore-10.0)。
 

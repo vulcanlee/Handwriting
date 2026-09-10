@@ -1,18 +1,51 @@
-const KEY='little-hands-state-v2', LEGACY='little-hands-state-v1';
-let writer=false, release=null, malformed=false, stopWatch=null;
+const KEY='little-hands-state-v2', LEGACY='little-hands-state-v1', LEASE_KEY='little-hands-writer-lease';
+const LEASE_MS=6000, LEASE_REFRESH_MS=2000, LEASE_VERIFY_MS=60;
+let writer=false, writerMode='none', release=null, leaseToken=null, leaseTimer=null, malformed=false, stopWatch=null;
+function readLease(){
+    try{const value=JSON.parse(localStorage.getItem(LEASE_KEY)||'null');return object(value)&&typeof value.token==='string'&&Number.isFinite(value.expires)?value:null;}
+    catch{return null;}
+}
+function ownsLease(){return leaseToken!==null&&readLease()?.token===leaseToken;}
+function stopLease(){if(leaseTimer!==null)clearInterval(leaseTimer);leaseTimer=null;}
+function refreshLease(){
+    if(!ownsLease()){writer=false;writerMode='busy';stopLease();return false;}
+    try{localStorage.setItem(LEASE_KEY,JSON.stringify({token:leaseToken,expires:Date.now()+LEASE_MS}));return true;}
+    catch{writer=false;writerMode='unavailable';stopLease();return false;}
+}
+async function acquireLease(){
+    const current=readLease();
+    if(current&&current.expires>Date.now()){writerMode='busy';return false;}
+    leaseToken=`${Date.now()}-${Math.random()}`;
+    try{localStorage.setItem(LEASE_KEY,JSON.stringify({token:leaseToken,expires:Date.now()+LEASE_MS}));}
+    catch{leaseToken=null;writerMode='unavailable';return false;}
+    await new Promise(resolve=>setTimeout(resolve,LEASE_VERIFY_MS));
+    if(!ownsLease()){leaseToken=null;writerMode='busy';return false;}
+    writer=true;writerMode='lease';
+    leaseTimer=setInterval(refreshLease,LEASE_REFRESH_MS);
+    globalThis.addEventListener?.('pagehide',releaseWriter);
+    return true;
+}
 export async function acquireWriter(){
     if(writer)return true;
-    if(!globalThis.navigator?.locks)return false;
+    if(!globalThis.navigator?.locks)return acquireLease();
     return new Promise(resolve=>{
         navigator.locks.request('little-hands-writer',{ifAvailable:true},async lock=>{
-            if(!lock){resolve(false);return;}
-            writer=true;
+            if(!lock){writerMode='busy';resolve(false);return;}
+            writer=true;writerMode='web-lock';
             await new Promise(done=>{release=done;resolve(true);});
-            writer=false;
-        }).catch(()=>resolve(false));
+            writer=false;writerMode='none';
+        }).catch(async()=>resolve(await acquireLease()));
     });
 }
-export function releaseWriter(){writer=false;release?.();release=null;}
+export function getWriterMode(){return writerMode;}
+export function releaseWriter(){
+    writer=false;
+    if(leaseToken!==null){
+        try{if(ownsLease())localStorage.removeItem(LEASE_KEY);}catch{}
+        leaseToken=null;stopLease();globalThis.removeEventListener?.('pagehide',releaseWriter);
+    }
+    release?.();release=null;writerMode='none';
+}
 const object=x=>!!x&&typeof x==='object'&&!Array.isArray(x);
 const count=x=>Number.isInteger(x)&&x>=0&&x<=2147483647;
 function date(x){
@@ -59,6 +92,7 @@ export function loadAdventure(){
     }catch{malformed=true;return{state:empty,available:true,malformed:true};}
 }
 export function saveAdventure(state){
+    if(writerMode==='lease'&&!ownsLease()){writer=false;writerMode='busy';stopLease();}
     if(!writer||malformed||!valid(state))return false;
     try{localStorage.setItem(KEY,JSON.stringify(state));return true;}catch{return false;}
 }

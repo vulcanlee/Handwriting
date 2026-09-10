@@ -3,7 +3,7 @@
 ## 自動驗證
 
 - 執行 `dotnet test Handwriting.slnx`：方向、短筆畫、閉合旋向、重試、重設、整字計數與真實教材。
-- 執行 `node --test tests/offline.test.cjs tests/practice-audio.test.cjs tests/practice-storage.test.cjs`：音檔快取、全部完成標記與下載中斷。
+- 執行 `node --test tests/*.test.cjs`：音檔快取、全部完成標記、下載中斷、HTTP 本機租約與多分頁寫入隔離。
 - 執行 `python scripts/Test-Curriculum.py`：99 個符號、174 筆、所有音檔存在、WAV 可解碼。
 - 執行 `pwsh -File scripts/Test-DocsEncoding.ps1`：BOM、嚴格 UTF-8、CRLF。
 - 執行 `dotnet publish src/Handwriting.Server -c Release -o artifacts/publish`。
@@ -21,6 +21,8 @@
 - [ ] 初次下載中斷不可標為可離線，重新連網按檢查可恢復。
 - [ ] 新版本在練習中不強制重載，關閉全部分頁後套用完整新版本。
 - [ ] 無法保存 localStorage 時仍能練習，畫面明確提示。
+- [ ] 一般 HTTP 公開網址顯示「HTTP 線上模式」，可建立孩子、完成練習、重載後保留成果。
+- [ ] HTTP 同來源第二個分頁被阻擋；關閉第一頁後可取得寫入權，異常關閉最久約 6 秒可恢復。
 
 自動軌跡與桌面觸控模擬不能取代孩子在實體平板的手感測試。人工聽辨與實體 Android 驗收目前待執行。
 
@@ -39,3 +41,9 @@
 
 - [x] 10 題限時重複通關、20 題跨輪及耐力徽章、綜合題涵蓋與隔離、背景事件暫停與加速到期不發獎。
 - [x] 首次落筆發獎不推移畫布，換題後正確重設書寫狀態。
+
+## 0.1.3 HTTP 線上模式驗收
+
+- [x] 無 Web Locks 時改用可續租 localStorage 鎖；同來源只有一個持有者，失去 token 後停止保存。
+- [x] HTTP 狀態明示為線上模式，並說明離線功能仍需 HTTPS 或 localhost。
+- [ ] 以實際公開 HTTP IP 與 Android Chrome 驗證建立孩子、重載保存、多分頁及 6 秒逾時恢復。

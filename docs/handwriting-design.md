@@ -26,7 +26,7 @@ SymbolDefinition 含分類、排序、字形、逐筆定義與語音；StrokeDef
 
 ## 交付規範
 
-根目錄 AGENTS.md 與 CLAUDE.md 自 Downloads 原樣複製，SHA-256 一致。版本基準 0.1.0，初版交付 0.1.1，動物探險交付 0.1.2；不自動 commit。文件採 UTF-8 BOM、CRLF，版本更新同步兩處索引。
+根目錄 AGENTS.md 與 CLAUDE.md 自 Downloads 原樣複製，SHA-256 一致。版本基準 0.1.0，初版交付 0.1.1，動物探險交付 0.1.2，HTTP 線上模式交付 0.1.3；不自動 commit。文件採 UTF-8 BOM、CRLF，版本更新同步兩處索引。
 
 ## 0.1.2 動物探險擴充
 

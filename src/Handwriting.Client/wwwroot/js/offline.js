@@ -2,7 +2,7 @@
     let status='正在檢查離線教材', registration, listeners=new Set();
     function publish(value){status=value;for(const fn of listeners)fn(value);}
     async function register(){
-        if(!('serviceWorker' in navigator)||!window.isSecureContext){publish('離線功能需要 HTTPS 或 localhost');return;}
+        if(!('serviceWorker' in navigator)||!window.isSecureContext){publish('HTTP 線上模式 · 離線功能需 HTTPS 或 localhost');return;}
         try{
             registration=await navigator.serviceWorker.register('service-worker.js',{updateViaCache:'none'});
             registration.addEventListener('updatefound',()=>{
