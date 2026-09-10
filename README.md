@@ -18,6 +18,10 @@ dotnet publish src/Handwriting.Server -c Release -o artifacts/publish
 dotnet artifacts/publish/Handwriting.Server.dll --contentRoot "$PWD/artifacts/publish" --urls http://localhost:5080
 ```
 
+## IIS 部署
+
+Windows Server 與 Windows 11 的 IIS 設定、CLI／Visual Studio 2026 Folder Publish、HTTPS、更新與回復流程，請依 [Windows IIS 部署 SOP](docs/operations/Windows-IIS部署SOP.md) 操作。
+
 ## 使用方式
 
 選分類與符號，按「開始練習」，看示範、聽讀音，從圓點沿線描寫。放開手指後檢查，失敗只重畫該筆。完成後可重練或前往下一個。進度只存在同一瀏覽器，不上傳筆跡；清除網站資料會移除紀錄。
